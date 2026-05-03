@@ -85,15 +85,15 @@ const SearchRides = () => {
           )
         `)
         .eq('status', 'active')
-        .not('available_seats', 'is', null) // Hide legacy rides without seat data
-        .gt('available_seats', 0); // Hide full rides
+        .not('available_seats', 'is', null)
+        .gt('available_seats', 0)
+        .gte('departure_date', new Date().toISOString().split('T')[0]); // Hide expired rides
 
       // Admins see everything. Students only see rides matching their gender
       if (profile?.role !== 'admin') {
         if (profile?.gender) {
           query = query.eq('gender_preference', profile.gender);
         }
-        query = query.neq('driver_id', user.id);
       }
 
       const { data: ridesData, error } = await query.order('departure_date', { ascending: true });
@@ -262,20 +262,41 @@ const SearchRides = () => {
                 </div>
 
                 {/* Action Button */}
-                <button
-                  onClick={() => handleRequestRide(ride.id)}
-                  className="btn-pill"
-                  style={{
-                    backgroundColor: '#1d4ed8',
-                    color: 'white',
-                    width: '100%',
-                    height: '2.75rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 700
-                  }}
-                >
-                  Request Ride
-                </button>
+                {ride.driver_id === myProfile?.id ? (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '2.75rem',
+                      borderRadius: '100px',
+                      background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)',
+                      border: '1.5px solid #86efac',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      color: '#16a34a'
+                    }}
+                  >
+                    ✅ Offered by you
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleRequestRide(ride.id)}
+                    className="btn-pill"
+                    style={{
+                      backgroundColor: '#1d4ed8',
+                      color: 'white',
+                      width: '100%',
+                      height: '2.75rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 700
+                    }}
+                  >
+                    Request Ride
+                  </button>
+                )}
               </motion.div>
             ))}
 

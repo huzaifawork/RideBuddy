@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  CheckCircle, XCircle, User, Clock, Loader2, AlertTriangle, CreditCard, Flag, Car, ExternalLink
+  CheckCircle, XCircle, User, Clock, Loader2, AlertTriangle, CreditCard, Flag, Car, ExternalLink, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -80,8 +80,8 @@ const AdminPanel = () => {
           .from('reports')
           .select(`
             *,
-            reporter:profiles!reports_reporter_id_fkey (id, full_name),
-            reported:profiles!reports_reported_id_fkey (id, full_name, report_count)
+            reporter:profiles!reports_reporter_id_fkey (id, full_name, phone),
+            reported:profiles!reports_reported_id_fkey (id, full_name, phone, report_count)
           `)
           .eq('status', 'pending');
         if (!error) setComplaints(data || []);
@@ -218,6 +218,27 @@ const AdminPanel = () => {
     } finally {
       setProcessingComplaint(null);
     }
+  };
+
+  // --- RIDE DELETION ---
+  const handleDeleteRide = async (rideId) => {
+    if (!window.confirm('Are you sure you want to delete this ride? This action cannot be undone.')) return;
+    try {
+      // Delete related requests first (foreign key constraint)
+      const { error: reqError } = await supabase
+        .from('requests')
+        .delete()
+        .eq('ride_id', rideId);
+      if (reqError) throw reqError;
+
+      const { error } = await supabase
+        .from('rides')
+        .delete()
+        .eq('id', rideId);
+      if (error) throw error;
+      toast.success('Ride deleted successfully.');
+      fetchData();
+    } catch (err) { toast.error('Error deleting ride: ' + err.message); }
   };
 
   const tabs = [
@@ -523,6 +544,11 @@ const AdminPanel = () => {
                         <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reported by</p>
                         <h3 style={{ fontWeight: 800, color: '#0f172a', margin: 0 }}>{c.reporter?.full_name}</h3>
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.1rem 0 0' }}>RB-{c.reporter?.id?.slice(-4).toUpperCase()}</p>
+                        {c.reporter?.phone && (
+                          <a href={`tel:${c.reporter.phone}`} style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.35rem' }}>
+                            📞 {c.reporter.phone}
+                          </a>
+                        )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reported user</p>
@@ -530,6 +556,11 @@ const AdminPanel = () => {
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.1rem 0 0' }}>
                           RB-{c.reported?.id?.slice(-4).toUpperCase()} • {c.reported?.report_count || 0} complaints
                         </p>
+                        {c.reported?.phone && (
+                          <a href={`tel:${c.reported.phone}`} style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.35rem' }}>
+                            📞 {c.reported.phone}
+                          </a>
+                        )}
                       </div>
                     </div>
 
@@ -607,8 +638,12 @@ const AdminPanel = () => {
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.1rem' }}>{ride.origin} → {ride.destination}</h3>
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>Driver: {ride.driver?.full_name} (RB-{ride.driver?.id?.slice(-4).toUpperCase()})</p>
                       </div>
-                      <div style={{ backgroundColor: ride.status === 'active' ? '#f0fdf4' : '#f8fafc', color: ride.status === 'active' ? '#16a34a' : '#64748b', padding: '0.3rem 0.6rem', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 700 }}>
-                        {ride.status.toUpperCase()}
+                      <div style={{ 
+                        backgroundColor: new Date(ride.departure_date) < new Date(new Date().toISOString().split('T')[0]) ? '#fef2f2' : ride.status === 'active' ? '#f0fdf4' : '#f8fafc', 
+                        color: new Date(ride.departure_date) < new Date(new Date().toISOString().split('T')[0]) ? '#dc2626' : ride.status === 'active' ? '#16a34a' : '#64748b', 
+                        padding: '0.3rem 0.6rem', borderRadius: '100px', fontSize: '0.65rem', fontWeight: 700 
+                      }}>
+                        {new Date(ride.departure_date) < new Date(new Date().toISOString().split('T')[0]) ? 'EXPIRED' : ride.status.toUpperCase()}
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', padding: '0.6rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem' }}>
@@ -629,6 +664,27 @@ const AdminPanel = () => {
                         <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>{ride.gender_preference}</p>
                       </div>
                     </div>
+                    <button
+                      onClick={() => handleDeleteRide(ride.id)}
+                      className="btn-pill"
+                      style={{
+                        marginTop: '1rem',
+                        background: '#dc2626',
+                        color: 'white',
+                        height: '2.8rem',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
+                    >
+                      <Trash2 size={16} /> Delete Ride
+                    </button>
                   </motion.div>
                 ))}
               </div>

@@ -60,9 +60,10 @@ const RideRequests = () => {
             full_name,
             phone,
             report_count
-          )
+          ),
+          payments(id, status)
         `)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'accepted'])
         .eq('ride.driver_id', user.id);
 
       if (error) throw error;
@@ -197,12 +198,55 @@ const RideRequests = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {req.status === 'pending' ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <button
+                        onClick={() => handleAccept(req)}
+                        disabled={!!actionLoading}
+                        style={{
+                          background: '#1d4ed8',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '100px',
+                          padding: '0.75rem',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          opacity: actionLoading ? 0.6 : 1
+                        }}
+                      >
+                        {actionLoading === req.id + '-accept' ? '...' : 'Accept'}
+                      </button>
+                      <button
+                        onClick={() => handleReject(req.id)}
+                        disabled={!!actionLoading}
+                        style={{
+                          background: '#e2e8f0',
+                          color: '#475569',
+                          border: 'none',
+                          borderRadius: '100px',
+                          padding: '0.75rem',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          opacity: actionLoading ? 0.6 : 1
+                        }}
+                      >
+                        {actionLoading === req.id + '-reject' ? '...' : 'Reject'}
+                      </button>
+                    </div>
+                  ) : (
                     <button
-                      onClick={() => handleAccept(req)}
-                      disabled={!!actionLoading}
+                      onClick={() => {
+                        const hasPayment = req.payments && req.payments.length > 0;
+                        if (hasPayment) {
+                          navigate(`/passenger-unlocked/${req.id}`);
+                        } else {
+                          navigate(`/unlock-contact/${req.id}`);
+                        }
+                      }}
                       style={{
-                        background: '#1d4ed8',
+                        background: (req.payments && req.payments.length > 0) ? '#10b981' : '#f59e0b',
                         color: 'white',
                         border: 'none',
                         borderRadius: '100px',
@@ -210,29 +254,12 @@ const RideRequests = () => {
                         fontWeight: 700,
                         fontSize: '0.85rem',
                         cursor: 'pointer',
-                        opacity: actionLoading ? 0.6 : 1
+                        width: '100%'
                       }}
                     >
-                      {actionLoading === req.id + '-accept' ? '...' : 'Accept'}
+                      {(req.payments && req.payments.length > 0) ? 'View Contact' : 'Complete Payment'}
                     </button>
-                    <button
-                      onClick={() => handleReject(req.id)}
-                      disabled={!!actionLoading}
-                      style={{
-                        background: '#e2e8f0',
-                        color: '#475569',
-                        border: 'none',
-                        borderRadius: '100px',
-                        padding: '0.75rem',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        opacity: actionLoading ? 0.6 : 1
-                      }}
-                    >
-                      {actionLoading === req.id + '-reject' ? '...' : 'Reject'}
-                    </button>
-                  </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
