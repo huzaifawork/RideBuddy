@@ -59,6 +59,7 @@ const MyRequests = () => {
           origin,
           destination,
           price,
+          departure_date,
           driver:profiles!rides_driver_id_fkey (
             id
           )
@@ -67,7 +68,14 @@ const MyRequests = () => {
       .eq('passenger_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (!error) setRequests(data || []);
+    if (!error) {
+      const today = new Date(new Date().toISOString().split('T')[0]);
+      const activeRequests = (data || []).filter(r => {
+        const rideDate = new Date(r.ride?.departure_date);
+        return rideDate >= today;
+      });
+      setRequests(activeRequests);
+    }
     setLoading(false);
   };
 

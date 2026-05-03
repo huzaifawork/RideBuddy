@@ -53,7 +53,8 @@ const RideRequests = () => {
             origin,
             destination,
             price,
-            driver_id
+            driver_id,
+            departure_date
           ),
           passenger:profiles!requests_passenger_id_fkey (
             id,
@@ -68,8 +69,14 @@ const RideRequests = () => {
 
       if (error) throw error;
 
-      // Filter to only show requests for this driver's rides
-      const myRequests = (data || []).filter(r => r.ride?.driver_id === user.id);
+      // Filter to only show requests for this driver's rides that are NOT expired
+      const today = new Date(new Date().toISOString().split('T')[0]);
+      const myRequests = (data || []).filter(r => {
+        const isMyRide = r.ride?.driver_id === user.id;
+        const rideDate = new Date(r.ride?.departure_date);
+        return isMyRide && rideDate >= today;
+      });
+      
       setRequests(myRequests);
     } catch (err) {
       toast.error('Failed to load requests: ' + err.message);
