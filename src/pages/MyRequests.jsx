@@ -33,6 +33,13 @@ const MyRequests = () => {
           console.log('Real-time update received:', payload);
           fetchMyRequests();
         })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        }, () => {
+          fetchMyRequests();
+        })
         .subscribe((status) => {
           console.log(`Subscription status for ${user.id}:`, status);
         });
@@ -54,6 +61,7 @@ const MyRequests = () => {
       .from('requests')
       .select(`
         *,
+        payments(status),
         ride:rides!requests_ride_id_fkey (
           id,
           origin,
@@ -79,9 +87,28 @@ const MyRequests = () => {
     setLoading(false);
   };
 
+  const getDisplayStatus = (req) => {
+    if (req.status === 'rejected') return 'rejected';
+    if (req.status === 'pending') return 'waiting';
+    if (req.status === 'accepted') {
+      const payment = req.payments && req.payments.length > 0 ? req.payments[0] : null;
+      if (!payment || payment.status === 'pending') {
+        return 'awaiting_driver';
+      }
+      if (payment.status === 'rejected') {
+        return 'rejected';
+      }
+      if (payment.status === 'approved' || payment.status === 'verified') {
+        return 'accepted';
+      }
+    }
+    return req.status;
+  };
+
   const getStatusStyle = (status) => {
     if (status === 'accepted') return { bg: '#f0fdf4', color: '#16a34a', icon: '✅', label: 'Accepted' };
     if (status === 'rejected') return { bg: '#fef2f2', color: '#dc2626', icon: '❌', label: 'Rejected' };
+    if (status === 'awaiting_driver') return { bg: '#fefce8', color: '#d97706', icon: '⏳', label: 'Awaiting Driver Payment' };
     return { bg: '#fefce8', color: '#d97706', icon: '⌛', label: 'Waiting' };
   };
 
@@ -111,7 +138,8 @@ const MyRequests = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {requests.map((req, index) => {
-              const statusStyle = getStatusStyle(req.status);
+              const displayStatus = getDisplayStatus(req);
+              const statusStyle = getStatusStyle(displayStatus);
               return (
                 <motion.div
                   key={req.id}

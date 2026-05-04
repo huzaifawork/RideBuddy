@@ -29,6 +29,11 @@ const RideRequests = () => {
           schema: 'public',
           table: 'requests'
         }, () => fetchRequests())
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        }, () => fetchRequests())
         .subscribe();
     };
 
@@ -106,29 +111,14 @@ const RideRequests = () => {
   const handleAccept = async (request) => {
     setActionLoading(request.id + '-accept');
     try {
-      // 1. Fetch current available seats to be safe
-      const { data: ride } = await supabase
-        .from('rides')
-        .select('available_seats')
-        .eq('id', request.ride_id)
-        .single();
+      const { error: reqUpdateError } = await supabase
+        .from('requests')
+        .update({ status: 'accepted' })
+        .eq('id', request.id);
 
-      if (!ride) throw new Error('Ride not found');
+      if (reqUpdateError) throw reqUpdateError;
 
-      // 2. Calculate new seat count
-      const seatsRequested = request.seats_requested || 1;
-      const newAvailableSeats = Math.max(0, (ride.available_seats || 0) - seatsRequested);
-
-      // 3. Update both the request status and the ride seats in parallel
-      const [reqUpdate, rideUpdate] = await Promise.all([
-        supabase.from('requests').update({ status: 'accepted' }).eq('id', request.id),
-        supabase.from('rides').update({ available_seats: newAvailableSeats }).eq('id', request.ride_id)
-      ]);
-
-      if (reqUpdate.error) throw reqUpdate.error;
-      if (rideUpdate.error) throw rideUpdate.error;
-
-      toast.success('Request accepted! Seats reserved.');
+      toast.success('Request accepted! Wait for payment to reserve seats.');
       navigate(`/unlock-contact/${request.id}`);
     } catch (err) {
       toast.error(err.message);
@@ -243,29 +233,39 @@ const RideRequests = () => {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => {
-                        const hasPayment = req.payments && req.payments.length > 0;
-                        if (hasPayment) {
-                          navigate(`/passenger-unlocked/${req.id}`);
-                        } else {
-                          navigate(`/unlock-contact/${req.id}`);
-                        }
-                      }}
-                      style={{
-                        background: (req.payments && req.payments.length > 0) ? '#10b981' : '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '100px',
-                        padding: '0.75rem',
-                        fontWeight: 700,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        width: '100%'
-                      }}
-                    >
-                      {(req.payments && req.payments.length > 0) ? 'View Contact' : 'Complete Payment'}
-                    </button>
+                    (() => {
+                      const payment = req.payments && req.payments.length > 0 ? req.payments[0] : null;
+                      const hasPayment = !!payment;
+                      const isRejected = payment?.status === 'rejected';
+
+                      return (
+                        <button
+                          onClick={() => {
+                            if (isRejected) {
+                              toast.error("Payment rejected.");
+                              navigate(`/passenger-unlocked/${req.id}`);
+                            } else if (hasPayment) {
+                              navigate(`/passenger-unlocked/${req.id}`);
+                            } else {
+                              navigate(`/unlock-contact/${req.id}`);
+                            }
+                          }}
+                          style={{
+                            background: isRejected ? '#ef4444' : hasPayment ? '#10b981' : '#f59e0b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '100px',
+                            padding: '0.75rem',
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            width: '100%'
+                          }}
+                        >
+                          {isRejected ? 'Payment Rejected' : hasPayment ? 'View Contact' : 'Complete Payment'}
+                        </button>
+                      );
+                    })()
                   )}
                 </motion.div>
               ))}

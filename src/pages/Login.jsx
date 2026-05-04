@@ -19,8 +19,14 @@ const Login = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="flex-center"
-        style={{ flexDirection: 'column', width: '100%' }}
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          width: '100%',
+          textAlign: 'center'
+        }}
       >
         <h1 className="title-main">RideBuddy</h1>
         <p className="subtitle">Safe carpooling for students</p>
@@ -41,16 +47,21 @@ const Login = () => {
 
       <div style={{ 
         position: 'absolute', 
-        bottom: '2rem', 
-        left: 0, 
-        right: 0, 
-        padding: '0 2rem', 
-        textAlign: 'center' 
+        bottom: '3rem', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        width: '100%',
+        padding: '0 1.5rem',
+        textAlign: 'center',
+        display: 'flex',
+        justifyContent: 'center'
       }}>
         <p style={{ 
-          color: '#94a3b8', 
-          fontSize: '0.8rem', 
-          whiteSpace: 'nowrap'
+          color: '#1e293b', 
+          fontSize: '0.85rem', 
+          fontWeight: 800,
+          margin: 0,
+          lineHeight: 1.4
         }}>
           By continuing, you agree that RideBuddy is only a platform connecting students.
         </p>

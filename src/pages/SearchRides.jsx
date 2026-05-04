@@ -17,6 +17,7 @@ const SearchRides = () => {
   const [myProfile, setMyProfile] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [requestingId, setRequestingId] = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
 
   const [filters, setFilters] = useState({
     search: '',
@@ -29,28 +30,35 @@ const SearchRides = () => {
     let profilesChannel;
 
     const setup = async () => {
-      // Clean up any existing channels with these names
-      await supabase.removeChannel(supabase.channel('search-rides'));
-      await supabase.removeChannel(supabase.channel('search-profiles'));
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Clean up any existing channels
+      await supabase.removeAllChannels();
 
       fetchMyProfileAndRides();
 
       ridesChannel = supabase
         .channel('search-rides')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, () => fetchMyProfileAndRides())
-        .subscribe();
-
-      profilesChannel = supabase
-        .channel('search-profiles')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => fetchMyProfileAndRides())
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'requests',
+          filter: user ? `passenger_id=eq.${user.id}` : undefined 
+        }, () => fetchMyProfileAndRides())
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'payments'
+        }, () => fetchMyProfileAndRides())
         .subscribe();
     };
 
     setup();
 
     return () => {
-      if (ridesChannel) supabase.removeChannel(ridesChannel);
-      if (profilesChannel) supabase.removeChannel(profilesChannel);
+      supabase.removeAllChannels();
     };
   }, []);
 
@@ -100,6 +108,16 @@ const SearchRides = () => {
 
       if (error) throw error;
       setRides(ridesData || []);
+
+      // Fetch my requests to show badges (latest first)
+      if (user) {
+        const { data: requestsData } = await supabase
+          .from('requests')
+          .select('ride_id, status, created_at, payments(status)')
+          .eq('passenger_id', user.id)
+          .order('created_at', { ascending: false });
+        setMyRequests(requestsData || []);
+      }
     } catch (err) {
       toast.error('Failed to load rides: ' + err.message);
     } finally {
@@ -133,11 +151,17 @@ const SearchRides = () => {
     navigate(`/request-ride/${rideId}`);
   };
 
-  const formatTime = (time) => {
-    if (!time) return '--';
+  const formatTime = (timeStr) => {
+    if (!timeStr) return '--';
+    let time = timeStr;
+    if (timeStr.includes('T')) {
+      time = timeStr.split('T')[1];
+    }
     const [h, m] = time.split(':');
     const hour = parseInt(h);
-    return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${m} ${ampm}`;
   };
 
   const formatDate = (date) => {
@@ -196,19 +220,88 @@ const SearchRides = () => {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {filteredRides.map((ride, index) => (
-              <motion.div
-                key={ride.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  background: 'white',
-                  borderRadius: '1.25rem',
-                  padding: '1.5rem',
-                  border: '1px solid #f1f5f9',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)'
-                }}
-              >
+            {filteredRides.map((ride, index) => {
+              const myRequest = myRequests.find(req => req.ride_id === ride.id);
+              
+              return (
+                <motion.div
+                  key={ride.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    background: 'white',
+                    borderRadius: '1.25rem',
+                    padding: '1.5rem',
+                    border: '1px solid #f1f5f9',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Status Badge */}
+                  {myRequest && (() => {
+                    let badgeText = '';
+                    let badgeColor = '#3b82f6';
+                    let badgeBg = '#eff6ff';
+                    let borderColor = '#dbeafe';
+
+                    const paymentStatus = myRequest.payments?.[0]?.status;
+
+                    if (myRequest.status === 'pending') {
+                      badgeText = 'Request Sent!';
+                    } else if (myRequest.status === 'accepted') {
+                      if (!paymentStatus || paymentStatus === 'pending') {
+                        badgeText = 'Awaiting Approval';
+                        badgeColor = '#f59e0b';
+                        badgeBg = '#fffbeb';
+                        borderColor = '#fef3c7';
+                      } else if (paymentStatus === 'approved') {
+                        badgeText = 'Seats Confirmed!';
+                        badgeColor = '#10b981';
+                        badgeBg = '#ecfdf5';
+                        borderColor = '#d1fae5';
+                      } else if (paymentStatus === 'rejected') {
+                        badgeText = 'Rejected - No Seats';
+                        badgeColor = '#dc2626';
+                        badgeBg = '#fef2f2';
+                        borderColor = '#fecaca';
+                      }
+                    } else if (myRequest.status === 'rejected') {
+                      badgeText = 'Rejected - No Seats';
+                      badgeColor = '#dc2626';
+                      badgeBg = '#fef2f2';
+                      borderColor = '#fecaca';
+                    }
+
+                    return (
+                      <div style={{
+                        position: 'absolute',
+                        top: '1rem',
+                        right: '1rem',
+                        backgroundColor: badgeBg,
+                        color: badgeColor,
+                        padding: '0.35rem 0.7rem',
+                        borderRadius: '2rem',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        border: `1px solid ${borderColor}`,
+                        zIndex: 10
+                      }}>
+                        <div style={{ 
+                          width: '5px', 
+                          height: '5px', 
+                          borderRadius: '50%', 
+                          backgroundColor: 'currentColor' 
+                        }} />
+                        {badgeText}
+                      </div>
+                    );
+                  })()}
+
                 {/* ID Header */}
                 <p style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: 600 }}>
                   RIDE-{ride.id?.slice(-4).toUpperCase()} | Driver: RB-{ride.driver?.id?.slice(-4).toUpperCase()}
@@ -297,8 +390,9 @@ const SearchRides = () => {
                     Request Ride
                   </button>
                 )}
-              </motion.div>
-            ))}
+                </motion.div>
+                );
+            })}
 
             {/* Back to Home Button at bottom */}
             <button 

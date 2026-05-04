@@ -143,6 +143,28 @@ const AdminPanel = () => {
   // --- PAYMENT VERIFICATION ---
   const handleApprovePayment = async (payment) => {
     try {
+      console.log("Approving payment:", payment);
+      
+      // Handle array or object for request
+      const reqData = Array.isArray(payment.request) ? payment.request[0] : payment.request;
+      const rideData = Array.isArray(reqData?.ride) ? reqData.ride[0] : reqData?.ride;
+
+      if (rideData?.id) {
+        const seatsRequested = reqData?.seats_requested || 1;
+        const currentSeats = rideData?.available_seats || 0;
+        const newAvailableSeats = Math.max(0, currentSeats - seatsRequested);
+        console.log(`Decreasing seats from ${currentSeats} to ${newAvailableSeats} for ride ${rideData.id}`);
+
+        const { error: rideError } = await supabase
+          .from('rides')
+          .update({ available_seats: newAvailableSeats })
+          .eq('id', rideData.id);
+        
+        if (rideError) throw rideError;
+      } else {
+        console.warn("Could not find ride data to decrease seats!");
+      }
+
       // Approve the payment status
       const { error: payError } = await supabase
         .from('payments')
@@ -150,12 +172,12 @@ const AdminPanel = () => {
         .eq('id', payment.id);
       if (payError) throw payError;
 
-      toast.success('Payment approved! Passenger contact shared.');
+      toast.success('Payment approved! Seats reserved and contact shared.');
       fetchData();
     } catch (err) { toast.error('Error: ' + err.message); }
   };
 
-  const handleRejectPayment = async (paymentId) => {
+  const handleRejectPayment = async (paymentId, requestId) => {
     if (!window.confirm('Reject this payment?')) return;
     try {
       const { error } = await supabase
@@ -163,6 +185,15 @@ const AdminPanel = () => {
         .update({ status: 'rejected' })
         .eq('id', paymentId);
       if (error) throw error;
+
+      if (requestId) {
+        const { error: reqError } = await supabase
+          .from('requests')
+          .update({ status: 'rejected' })
+          .eq('id', requestId);
+        if (reqError) throw reqError;
+      }
+
       toast.error('Payment rejected.');
       fetchData();
     } catch (err) { toast.error('Error: ' + err.message); }
@@ -519,7 +550,7 @@ const AdminPanel = () => {
                       <button onClick={() => handleApprovePayment(pay)} className="btn-pill" style={{ backgroundColor: '#10b981', color: 'white', height: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <CheckCircle size={18} /> Approve
                       </button>
-                      <button onClick={() => handleRejectPayment(pay.id)} className="btn-pill" style={{ backgroundColor: '#dc2626', color: 'white', height: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <button onClick={() => handleRejectPayment(pay.id, pay.request?.id)} className="btn-pill" style={{ backgroundColor: '#dc2626', color: 'white', height: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <XCircle size={18} /> Reject
                       </button>
                     </div>

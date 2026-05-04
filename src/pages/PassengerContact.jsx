@@ -61,6 +61,7 @@ const PassengerContact = () => {
         .single();
 
       setPaymentVerified(payment?.status === 'approved');
+      setData(prev => ({ ...prev, paymentStatus: payment?.status }));
     } catch (err) {
       toast.error('Error loading contact: ' + err.message);
     } finally {
@@ -77,6 +78,7 @@ const PassengerContact = () => {
   }
 
   if (!paymentVerified) {
+    const isRejected = data?.paymentStatus === 'rejected';
     return (
       <div style={{ 
         backgroundColor: 'white', 
@@ -89,16 +91,20 @@ const PassengerContact = () => {
         fontFamily: "'Plus Jakarta Sans', sans-serif"
       }}>
         <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>⏳</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.75rem' }}>
-            Awaiting Admin Approval
+          <div style={{ fontSize: '3rem', marginBottom: '1.5rem' }}>{isRejected ? '❌' : '⏳'}</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: isRejected ? '#dc2626' : '#1e293b', marginBottom: '0.75rem' }}>
+            {isRejected ? 'Payment Rejected' : 'Awaiting Admin Approval'}
           </h2>
           <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Your payment is being reviewed. Once verified, the passenger's contact will appear here automatically.
+            {isRejected 
+              ? 'Your payment was rejected by the admin. Please try submitting again or contact support.'
+              : "Your payment is being reviewed. Once verified, the passenger's contact will appear here automatically."}
           </p>
-          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1rem', marginBottom: '2rem', fontSize: '0.8rem', color: '#64748b' }}>
-            💡 This page will update automatically!
-          </div>
+          {!isRejected && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1rem', marginBottom: '2rem', fontSize: '0.8rem', color: '#64748b' }}>
+              💡 This page will update automatically!
+            </div>
+          )}
           <button 
             onClick={() => navigate('/dashboard')} 
             className="btn-pill"

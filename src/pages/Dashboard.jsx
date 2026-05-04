@@ -69,6 +69,16 @@ const Dashboard = ({ profile }) => {
         <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.1rem' }}>Hello!</h1>
         <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>What would you like to do today?</p>
 
+        {/* Notice Text */}
+        <p style={{ 
+          fontSize: '0.7rem', 
+          color: '#94a3b8', 
+          margin: '-0.5rem 0 1.25rem 0', 
+          lineHeight: 1.4 
+        }}>
+          * This web app is currently under development. If you encounter any issues or have suggestions, feel free to contact us at <strong style={{ whiteSpace: 'nowrap', color: '#64748b' }}>0335-2005507</strong>.
+        </p>
+
         {/* User Stats Card */}
         <div style={{ 
           background: '#eff6ff', 

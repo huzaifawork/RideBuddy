@@ -15,6 +15,7 @@ const RequestRide = () => {
     dropoff_point: '',
     seats_requested: 1
   });
+  const [hasRequested, setHasRequested] = useState(false);
 
   useEffect(() => {
     fetchRideDetails();
@@ -34,7 +35,24 @@ const RequestRide = () => {
       .eq('id', rideId)
       .single();
 
-    if (!error) setRideDetails(data);
+
+    if (!error) {
+      setRideDetails(data);
+      
+      // Check if user has already requested this ride
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: existing } = await supabase
+          .from('requests')
+          .select('id')
+          .eq('ride_id', rideId)
+          .eq('passenger_id', user.id)
+          .limit(1);
+        if (existing && existing.length > 0) {
+          setHasRequested(true);
+        }
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -44,18 +62,8 @@ const RequestRide = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Check if already requested
-      const { data: existing } = await supabase
-        .from('requests')
-        .select('id')
-        .eq('ride_id', rideId)
-        .eq('passenger_id', user.id)
-        .maybeSingle();
-
-      if (existing) {
-        toast.error('You have already requested this ride!');
-        return;
-      }
+      // We no longer block the request, but we can log that it's a multi-request if needed.
+      // The client wants them to be able to request again even if accepted or rejected.
 
       if (parseInt(formData.seats_requested) > (rideDetails?.available_seats || 0)) {
         toast.error('Not enough seats available!');
@@ -92,6 +100,30 @@ const RequestRide = () => {
         {/* Header */}
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.25rem' }}>Request Ride</h1>
         <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '2.5rem' }}>Fill your pickup and drop details</p>
+
+        {/* Previous Request Notice */}
+        {hasRequested && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              backgroundColor: '#fefce8',
+              border: '1px solid #fef08a',
+              borderRadius: '0.75rem',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}
+          >
+            <CheckCircle size={20} color="#ca8a04" />
+            <p style={{ fontSize: '0.8rem', color: '#854d0e', margin: 0 }}>
+              <strong>Notice:</strong> You have already requested this ride before. You can request it again if you want to book more seats.
+            </p>
+          </motion.div>
+        )}
 
         {/* Ride Information Card */}
         {rideDetails ? (
