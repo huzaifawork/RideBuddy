@@ -45,6 +45,15 @@ const PostRide = () => {
         throw new Error('Your gender has not been assigned yet. Please wait for admin verification.');
       }
 
+      // Prevent past dates
+      const selectedDate = new Date(formData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate < today) {
+        throw new Error('You cannot post a ride for a past date.');
+      }
+
       // departure_time is likely a TIMESTAMP (needs date + time)
       // arrival_time is likely a TIME (needs only HH:mm:ss)
       const departureTimestamp = `${formData.date}T${formData.departure_time}:00`;
@@ -126,6 +135,7 @@ const PostRide = () => {
               className="input-field"
               style={{ height: '3rem', fontSize: '0.9rem' }}
               value={formData.date}
+              min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setFormData({...formData, date: e.target.value})}
               required
             />
