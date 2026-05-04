@@ -17,6 +17,7 @@ const AdminPanel = () => {
   const [rides, setRides] = useState([]);
   const [selectedGenders, setSelectedGenders] = useState({});
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [counts, setCounts] = useState({ users: 0, payments: 0, complaints: 0, rides: 0 });
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -25,13 +26,32 @@ const AdminPanel = () => {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const setup = async () => {
+      fetchData();
+      fetchCounts();
+    };
+    setup();
 
     // Real-time listeners for Admin Panel
-    const profilesChannel = supabase.channel('admin-profiles').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => activeTab === 'users' && fetchData()).subscribe();
-    const paymentsChannel = supabase.channel('admin-payments').on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => activeTab === 'payments' && fetchData()).subscribe();
-    const reportsChannel = supabase.channel('admin-reports').on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => activeTab === 'complaints' && fetchData()).subscribe();
-    const ridesChannel = supabase.channel('admin-rides').on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, () => activeTab === 'rides' && fetchData()).subscribe();
+    const profilesChannel = supabase.channel('admin-profiles').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+      fetchCounts();
+      if (activeTab === 'users') fetchData();
+    }).subscribe();
+    
+    const paymentsChannel = supabase.channel('admin-payments').on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+      fetchCounts();
+      if (activeTab === 'payments') fetchData();
+    }).subscribe();
+    
+    const reportsChannel = supabase.channel('admin-reports').on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => {
+      fetchCounts();
+      if (activeTab === 'complaints') fetchData();
+    }).subscribe();
+    
+    const ridesChannel = supabase.channel('admin-rides').on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, () => {
+      fetchCounts();
+      if (activeTab === 'rides') fetchData();
+    }).subscribe();
 
     return () => {
       supabase.removeChannel(profilesChannel);
@@ -40,6 +60,26 @@ const AdminPanel = () => {
       supabase.removeChannel(ridesChannel);
     };
   }, [activeTab]);
+
+  const fetchCounts = async () => {
+    try {
+      const [verifRes, payRes, compRes, ridesRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_verified', false).not('full_name', 'is', null),
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('rides').select('id', { count: 'exact', head: true })
+      ]);
+
+      setCounts({
+        users: verifRes.count || 0,
+        payments: payRes.count || 0,
+        complaints: compRes.count || 0,
+        rides: ridesRes.count || 0
+      });
+    } catch (err) {
+      console.error('Error fetching counts:', err);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -273,10 +313,10 @@ const AdminPanel = () => {
   };
 
   const tabs = [
-    { key: 'users', label: 'Verifications', icon: <User size={14} />, count: userRequests.length },
-    { key: 'payments', label: 'Payments', icon: <CreditCard size={14} />, count: paymentRequests.length },
-    { key: 'rides', label: 'Rides', icon: <Car size={14} />, count: rides.length },
-    { key: 'complaints', label: 'Complaints', icon: <Flag size={14} />, count: complaints.length },
+    { key: 'users', label: 'Verifications', icon: <User size={14} />, count: counts.users },
+    { key: 'payments', label: 'Payments', icon: <CreditCard size={14} />, count: counts.payments },
+    { key: 'rides', label: 'Rides', icon: <Car size={14} />, count: counts.rides },
+    { key: 'complaints', label: 'Complaints', icon: <Flag size={14} />, count: counts.complaints },
   ];
 
   return (
