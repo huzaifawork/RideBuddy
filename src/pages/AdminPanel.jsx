@@ -97,7 +97,7 @@ const AdminPanel = () => {
           .from('payments')
           .select(`
             *,
-            payer:profiles!payments_payer_id_fkey (full_name, id),
+            payer:profiles!payments_payer_id_fkey (full_name, id, phone),
             request:requests!payments_request_id_fkey (
               id,
               pickup_point,
@@ -572,6 +572,16 @@ const AdminPanel = () => {
                         <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
                           {pay.request?.ride?.origin} → {pay.request?.ride?.destination}
                         </p>
+                        {pay.payer?.phone && (
+                          <a 
+                            href={`https://wa.me/92${pay.payer.phone.replace(/\D/g, '').slice(-10)}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ fontSize: '0.75rem', color: '#00a859', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.4rem' }}
+                          >
+                            WhatsApp: {pay.payer.phone}
+                          </a>
+                        )}
                       </div>
                       <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#10b981' }}>PKR {pay.amount}</span>
                     </div>
@@ -616,9 +626,27 @@ const AdminPanel = () => {
                         <h3 style={{ fontWeight: 800, color: '#0f172a', margin: 0 }}>{c.reporter?.full_name}</h3>
                         <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.1rem 0 0' }}>RB-{c.reporter?.id?.slice(-4).toUpperCase()}</p>
                         {c.reporter?.phone && (
-                          <a href={`tel:${c.reporter.phone}`} style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.35rem' }}>
-                            📞 {c.reporter.phone}
-                          </a>
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <a 
+                              href={`https://wa.me/92${c.reporter.phone.replace(/\D/g, '').slice(-10)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                fontSize: '0.75rem', 
+                                background: '#f0fdf4', 
+                                color: '#16a34a', 
+                                padding: '0.25rem 0.5rem', 
+                                borderRadius: '100px', 
+                                fontWeight: 700, 
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                              }}
+                            >
+                              WhatsApp {c.reporter.phone}
+                            </a>
+                          </div>
                         )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -628,9 +656,27 @@ const AdminPanel = () => {
                           RB-{c.reported?.id?.slice(-4).toUpperCase()} • {c.reported?.report_count || 0} complaints
                         </p>
                         {c.reported?.phone && (
-                          <a href={`tel:${c.reported.phone}`} style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.35rem' }}>
-                            📞 {c.reported.phone}
-                          </a>
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <a 
+                              href={`https://wa.me/92${c.reported.phone.replace(/\D/g, '').slice(-10)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                fontSize: '0.75rem', 
+                                background: '#fff1f2', 
+                                color: '#e11d48', 
+                                padding: '0.25rem 0.5rem', 
+                                borderRadius: '100px', 
+                                fontWeight: 700, 
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                              }}
+                            >
+                              WhatsApp {c.reported.phone}
+                            </a>
+                          </div>
                         )}
                       </div>
                     </div>

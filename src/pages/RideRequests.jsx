@@ -65,6 +65,7 @@ const RideRequests = () => {
             id,
             full_name,
             phone,
+            gender,
             report_count
           ),
           payments(id, status)
@@ -190,8 +191,9 @@ const RideRequests = () => {
                   </div>
 
                   {/* Complaints Info */}
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1.25rem' }}>
-                    Complaints: <span style={{ color: req.passenger?.report_count > 0 ? '#ef4444' : '#64748b' }}>{req.passenger?.report_count || 0}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                    <span>Gender: <span style={{ fontWeight: 700, color: '#1e293b' }}>{req.passenger?.gender || 'N/A'}</span></span>
+                    <span>Complaints: <span style={{ fontWeight: 700, color: req.passenger?.report_count > 0 ? '#ef4444' : '#64748b' }}>{req.passenger?.report_count || 0}</span></span>
                   </div>
 
                   {/* Action Buttons */}

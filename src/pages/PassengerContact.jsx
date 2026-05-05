@@ -44,7 +44,8 @@ const PassengerContact = () => {
           passenger:profiles!requests_passenger_id_fkey (
             id,
             full_name,
-            phone
+            phone,
+            gender
           )
         `)
         .eq('id', requestId)
@@ -143,11 +144,15 @@ const PassengerContact = () => {
             <span style={{ color: '#64748b' }}>Passenger Code:</span>
             <span style={{ fontWeight: 700, color: '#1e293b' }}>RB-{data?.passenger?.id?.slice(-4).toUpperCase() || '1024'}</span>
           </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', fontSize: '0.8rem' }}>
+            <span style={{ color: '#64748b' }}>Gender:</span>
+            <span style={{ fontWeight: 700, color: '#1e293b' }}>{data?.passenger?.gender || 'N/A'}</span>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
             <span style={{ color: '#64748b' }}>Phone Number:</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#1e293b' }}>
               <Phone size={14} style={{ color: '#64748b' }} />
-              <span>{data?.passenger?.phone || '03XX-XXXXXXX'}</span>
+              <span>{data?.passenger?.phone || 'Not Available'}</span>
             </div>
           </div>
         </div>
