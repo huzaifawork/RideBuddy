@@ -97,12 +97,8 @@ const SearchRides = () => {
         .gt('available_seats', 0)
         .gte('departure_date', new Date().toISOString().split('T')[0]); // Hide expired rides
 
-      // Admins see everything. Students only see rides matching their gender
-      if (profile?.role !== 'admin') {
-        if (profile?.gender) {
-          query = query.eq('gender_preference', profile.gender);
-        }
-      }
+      // All users can now see all rides regardless of gender
+
 
       const { data: ridesData, error } = await query.order('departure_date', { ascending: true });
 
