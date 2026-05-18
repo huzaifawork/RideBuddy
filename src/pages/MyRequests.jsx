@@ -157,7 +157,7 @@ const MyRequests = () => {
                 >
                   {/* Card Header Info */}
                   <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', marginBottom: '1rem' }}>
-                    RIDE-{req.ride?.id?.slice(-4).toUpperCase()} | Driver: RB-{req.ride?.driver?.id?.slice(-4).toUpperCase()}
+                    RIDE-{req.ride?.id?.slice(-4).toUpperCase()} | Driver: RB-{req.ride?.driver?.id?.slice(-4).toUpperCase()} | Seats: {req.seats_requested || 1}
                   </div>
 
                   {/* Route with Icons */}

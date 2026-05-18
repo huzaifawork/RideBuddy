@@ -40,7 +40,8 @@ const UnlockContact = () => {
     if (!error) setRequestData(data);
   };
 
-  const platformFee = requestData ? Math.round(parseFloat(requestData.ride?.price || 0) * 0.05) : 0;
+  const totalRidePrice = requestData ? parseFloat(requestData.ride?.price || 0) * (requestData.seats_requested || 1) : 0;
+  const platformFee = Math.round(totalRidePrice * 0.05);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -134,12 +135,12 @@ const UnlockContact = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', fontSize: '0.85rem' }}>
             <span style={{ color: '#1e293b', fontWeight: 500 }}>Ride Price:</span>
             <span style={{ fontWeight: 700, color: '#1e293b' }}>
-              Rs. {parseFloat(requestData?.ride?.price || 500).toLocaleString()}
+              Rs. {totalRidePrice.toLocaleString()}
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', paddingTop: '0.6rem', borderTop: '1px dashed #e2e8f0' }}>
             <span style={{ color: '#3b82f6', fontWeight: 600 }}>Platform Fee (5%):</span>
-            <span style={{ fontWeight: 800, color: '#3b82f6' }}>Rs. {platformFee || 25}</span>
+            <span style={{ fontWeight: 800, color: '#3b82f6' }}>Rs. {platformFee}</span>
           </div>
         </div>
 

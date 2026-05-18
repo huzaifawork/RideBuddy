@@ -16,6 +16,7 @@ const RequestRide = () => {
     seats_requested: 1
   });
   const [hasRequested, setHasRequested] = useState(false);
+  const [previousRequests, setPreviousRequests] = useState([]);
 
   useEffect(() => {
     fetchRideDetails();
@@ -44,12 +45,12 @@ const RequestRide = () => {
       if (user) {
         const { data: existing } = await supabase
           .from('requests')
-          .select('id')
+          .select('id, seats_requested, status')
           .eq('ride_id', rideId)
-          .eq('passenger_id', user.id)
-          .limit(1);
+          .eq('passenger_id', user.id);
         if (existing && existing.length > 0) {
           setHasRequested(true);
+          setPreviousRequests(existing);
         }
       }
     }
@@ -119,9 +120,14 @@ const RequestRide = () => {
             }}
           >
             <CheckCircle size={20} color="#ca8a04" />
-            <p style={{ fontSize: '0.8rem', color: '#854d0e', margin: 0 }}>
-              <strong>Notice:</strong> You have already requested this ride before. You can request it again if you want to book more seats.
-            </p>
+            <div style={{ fontSize: '0.8rem', color: '#854d0e' }}>
+              <strong>Previous Requests:</strong>
+              {previousRequests.map((r, i) => (
+                <div key={i} style={{ marginTop: '0.3rem' }}>
+                  • {r.seats_requested} seat(s) — <span style={{ textTransform: 'capitalize', fontWeight: 700 }}>{r.status}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
 

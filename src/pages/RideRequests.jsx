@@ -112,6 +112,32 @@ const RideRequests = () => {
   const handleAccept = async (request) => {
     setActionLoading(request.id + '-accept');
     try {
+      // Check available seats before accepting
+      const { data: rideData, error: rideError } = await supabase
+        .from('rides')
+        .select('available_seats')
+        .eq('id', request.ride.id)
+        .single();
+
+      if (rideError) throw rideError;
+
+      // Sum already accepted seats for this ride (available_seats only decrements on payment approval)
+      const { data: acceptedRequests, error: acceptedError } = await supabase
+        .from('requests')
+        .select('seats_requested')
+        .eq('ride_id', request.ride.id)
+        .eq('status', 'accepted');
+
+      if (acceptedError) throw acceptedError;
+
+      const acceptedSeats = (acceptedRequests || []).reduce((sum, r) => sum + (r.seats_requested || 1), 0);
+      const remainingSeats = rideData.available_seats - acceptedSeats;
+
+      if (request.seats_requested > remainingSeats) {
+        toast.error(`Not enough seats! Only ${remainingSeats} seat(s) remaining.`);
+        return;
+      }
+
       const { error: reqUpdateError } = await supabase
         .from('requests')
         .update({ status: 'accepted' })
@@ -170,6 +196,10 @@ const RideRequests = () => {
                   {/* Card Header Info */}
                   <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', marginBottom: '1.25rem' }}>
                     RIDE-{req.ride?.id?.slice(-4).toUpperCase()} | 👤 RB-{req.passenger?.id?.slice(-4).toUpperCase()}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '1rem', backgroundColor: '#eff6ff', padding: '0.5rem 0.75rem', borderRadius: '0.5rem' }}>
+                    <span style={{ color: '#64748b' }}>Seats Requested:</span>
+                    <span style={{ fontWeight: 700, color: '#2563eb' }}>{req.seats_requested || 1} seat(s)</span>
                   </div>
 
                   {/* Route with Icons */}
