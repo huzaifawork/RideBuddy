@@ -74,7 +74,7 @@ const SearchRides = () => {
       // Get my profile to know my gender
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, gender, role')
+        .select('id, gender, role, is_verified')
         .eq('id', user.id)
         .single();
 
@@ -103,7 +103,15 @@ const SearchRides = () => {
       const { data: ridesData, error } = await query.order('departure_date', { ascending: true });
 
       if (error) throw error;
-      setRides(ridesData || []);
+
+      // Admin sees all rides, otherwise filter by gender preference
+      const isAdmin = profile?.role === 'admin';
+      const filtered = (ridesData || []).filter(ride => {
+        if (isAdmin) return true;
+        return ride.gender_preference === profile?.gender;
+      });
+
+      setRides(filtered);
 
       // Fetch my requests to show badges (latest first)
       if (user) {
