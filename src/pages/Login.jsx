@@ -28,7 +28,16 @@ const Login = () => {
           textAlign: 'center'
         }}
       >
-        <h1 className="title-main">RideBuddy</h1>
+        <img
+          src="/logo.png"
+          alt="RideBuddy"
+          style={{
+            width: 'clamp(140px, 55vw, 220px)',
+            height: 'auto',
+            marginBottom: '0.5rem',
+            objectFit: 'contain'
+          }}
+        />
         <p className="subtitle">Safe carpooling for students</p>
 
         <div className="flex-center" style={{ flexDirection: 'column', width: '100%', marginTop: '2rem' }}>
