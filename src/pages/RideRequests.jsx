@@ -121,22 +121,8 @@ const RideRequests = () => {
 
       if (rideError) throw rideError;
 
-      // Sum already accepted seats for this ride (available_seats only decrements on payment approval)
-      const { data: acceptedRequests, error: acceptedError } = await supabase
-        .from('requests')
-        .select('seats_requested')
-        .eq('ride_id', request.ride.id)
-        .eq('status', 'accepted');
-
-      if (acceptedError) throw acceptedError;
-
-      const acceptedSeats = (acceptedRequests || []).reduce((sum, r) => sum + (r.seats_requested || 1), 0);
-      const remainingSeats = rideData.available_seats - acceptedSeats;
-
-      console.log('available_seats:', rideData.available_seats, 'acceptedSeats:', acceptedSeats, 'remainingSeats:', remainingSeats, 'requested:', request.seats_requested);
-
-      if (request.seats_requested > remainingSeats) {
-        toast.error(`Not enough seats! Only ${remainingSeats} seat(s) remaining.`);
+      if (request.seats_requested > rideData.available_seats) {
+        toast.error(`Not enough seats! Only ${rideData.available_seats} seat(s) remaining.`);
         return;
       }
 
