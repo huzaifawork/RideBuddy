@@ -1,0 +1,14 @@
+<svg width="96" height="64" viewBox="0 0 96 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ride AC car">
+  <title>Ride AC car</title>
+  <path d="M23 36H78C82.4 36 86 39.6 86 44V50H16V44C16 39.6 19.6 36 24 36H23Z" fill="#EEF2F7"/>
+  <path d="M31 24H62C66.8 24 71.2 26.8 73.2 31.2L75.5 36H25L28.7 28C29.6 25.5 30.8 24 31 24Z" fill="#FFFFFF"/>
+  <path d="M33 28H46V36H28L31 30C31.5 28.9 32.2 28 33 28Z" fill="#253041"/>
+  <path d="M50 28H61C64.2 28 67 29.9 68.3 32.8L69.8 36H50V28Z" fill="#253041"/>
+  <circle cx="31" cy="50" r="8" fill="#111827"/>
+  <circle cx="31" cy="50" r="3.5" fill="#E5E7EB"/>
+  <circle cx="70" cy="50" r="8" fill="#111827"/>
+  <circle cx="70" cy="50" r="3.5" fill="#E5E7EB"/>
+  <circle cx="18" cy="24" r="10" fill="#2F80ED"/>
+  <path d="M18 17.5V30.5M12.3 20.8L23.7 27.2M23.7 20.8L12.3 27.2" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M25 36L29.3 27.2C30.5 24.6 33.1 23 35.9 23H61.5C67 23 72 26.2 74.2 31.2L76.4 36H79C83.4 36 87 39.6 87 44V50H78M24 50H15V44C15 39.6 18.6 36 23 36H25ZM40 50H61" stroke="#111827" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

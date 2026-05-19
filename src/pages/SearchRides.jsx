@@ -19,10 +19,20 @@ const SearchRides = () => {
   const [requestingId, setRequestingId] = useState(null);
   const [myRequests, setMyRequests] = useState([]);
 
+  const VEHICLE_TYPES = [
+    { label: 'All', value: '' },
+    { label: 'Bike', value: 'bike', icon: '/icons/bike.svg' },
+    { label: 'Mini Car', value: 'mini_car', icon: '/icons/mini_car.svg' },
+    { label: 'Rickshaw', value: 'rickshaw', icon: '/icons/rickshaw.svg' },
+    { label: 'Ride AC', value: 'ride_ac', icon: '/icons/ride_ac_clear.svg' },
+    { label: 'Premium', value: 'premium_sedan', icon: '/icons/premium_sedan_clear.svg' },
+  ];
+
   const [filters, setFilters] = useState({
     search: '',
     date: '',
-    maxPrice: ''
+    maxPrice: '',
+    vehicleType: ''
   });
 
   useEffect(() => {
@@ -148,6 +158,10 @@ const SearchRides = () => {
       result = result.filter(r => parseFloat(r.price) <= parseFloat(filters.maxPrice));
     }
 
+    if (filters.vehicleType) {
+      result = result.filter(r => r.vehicle_type === filters.vehicleType);
+    }
+
     setFilteredRides(result);
   };
 
@@ -211,6 +225,32 @@ const SearchRides = () => {
               style={{ borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b' }}
             />
           </div>
+
+          {/* Vehicle Type Filter */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+            {VEHICLE_TYPES.map(v => (
+              <button
+                key={v.value}
+                onClick={() => setFilters({ ...filters, vehicleType: v.value })}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.4rem 0.6rem',
+                  borderRadius: '0.75rem',
+                  border: filters.vehicleType === v.value ? '2px solid #2563eb' : '2px solid #e2e8f0',
+                  backgroundColor: filters.vehicleType === v.value ? '#eff6ff' : 'white',
+                  cursor: 'pointer',
+                  minWidth: v.value === '' ? '3rem' : '3.5rem',
+                  flexShrink: 0
+                }}
+              >
+                {v.icon ? <img src={v.icon} alt={v.label} style={{ width: '28px', height: '20px', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.75rem' }}>🚗</span>}
+                <span style={{ fontSize: '0.55rem', fontWeight: 600, color: filters.vehicleType === v.value ? '#2563eb' : '#64748b', whiteSpace: 'nowrap' }}>{v.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Ride Cards */}
@@ -235,7 +275,7 @@ const SearchRides = () => {
                   style={{
                     background: 'white',
                     borderRadius: '1.25rem',
-                    padding: '1.5rem',
+                    padding: '1.25rem',
                     border: '1px solid #f1f5f9',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
                     position: 'relative'
@@ -306,10 +346,24 @@ const SearchRides = () => {
                     );
                   })()}
 
-                {/* ID Header */}
-                <p style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  RIDE-{ride.id?.slice(-4).toUpperCase()} | Driver: RB-{ride.driver?.id?.slice(-4).toUpperCase()}
-                </p>
+                {/* ID Header + Vehicle Icon Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                  {(() => {
+                    const v = VEHICLE_TYPES.find(vt => vt.value === ride.vehicle_type);
+                    return v?.icon ? (
+                      <img src={v.icon} alt={v.label} style={{ width: '72px', height: '50px', objectFit: 'contain', flexShrink: 0 }} />
+                    ) : <div style={{ width: '72px' }} />;
+                  })()}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.6rem', color: '#94a3b8', margin: '0 0 0.2rem', fontWeight: 600 }}>
+                      RIDE-{ride.id?.slice(-4).toUpperCase()} | Driver: RB-{ride.driver?.id?.slice(-4).toUpperCase()}
+                    </p>
+                    {(() => {
+                      const v = VEHICLE_TYPES.find(vt => vt.value === ride.vehicle_type);
+                      return v ? <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>{v.label}</p> : null;
+                    })()}
+                  </div>
+                </div>
 
                 {/* Route */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>

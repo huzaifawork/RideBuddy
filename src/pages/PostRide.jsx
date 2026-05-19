@@ -16,8 +16,17 @@ const PostRide = () => {
     departure_time: '',
     arrival_time: '',
     price: '',
-    available_seats: 4
+    available_seats: 4,
+    vehicle_type: ''
   });
+
+  const VEHICLE_TYPES = [
+    { label: 'Bike', value: 'bike', icon: '/icons/bike.svg' },
+    { label: 'Mini Car', value: 'mini_car', icon: '/icons/mini_car.svg' },
+    { label: 'Rickshaw', value: 'rickshaw', icon: '/icons/rickshaw.svg' },
+    { label: 'Ride AC', value: 'ride_ac', icon: '/icons/ride_ac_clear.svg' },
+    { label: 'Premium', value: 'premium_sedan', icon: '/icons/premium_sedan_clear.svg' },
+  ];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,6 +81,7 @@ const PostRide = () => {
           total_seats: parseInt(formData.available_seats), 
           available_seats: parseInt(formData.available_seats),
           gender_preference: profile.gender,
+          vehicle_type: formData.vehicle_type,
           status: 'active'
         }])
         .select()
@@ -194,6 +204,31 @@ const PostRide = () => {
               onChange={(e) => setFormData({...formData, price: e.target.value})}
               required
             />
+          </div>
+
+          {/* Vehicle Type Selector */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: '0.5rem' }}>Vehicle Type</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+              {VEHICLE_TYPES.map(v => (
+                <div
+                  key={v.value}
+                  onClick={() => setFormData({...formData, vehicle_type: v.value})}
+                  style={{
+                    background: formData.vehicle_type === v.value ? '#eff6ff' : '#fff',
+                    borderRadius: '18px',
+                    padding: '1rem 0.5rem',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                    border: formData.vehicle_type === v.value ? '2px solid #2563eb' : '2px solid transparent',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <img src={v.icon} alt={v.label} style={{ width: '80px', height: '56px', objectFit: 'contain' }} />
+                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', fontWeight: 700, color: formData.vehicle_type === v.value ? '#2563eb' : '#111827' }}>{v.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Gender Display Row */}
