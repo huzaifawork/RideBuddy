@@ -133,6 +133,8 @@ const RideRequests = () => {
       const acceptedSeats = (acceptedRequests || []).reduce((sum, r) => sum + (r.seats_requested || 1), 0);
       const remainingSeats = rideData.available_seats - acceptedSeats;
 
+      console.log('available_seats:', rideData.available_seats, 'acceptedSeats:', acceptedSeats, 'remainingSeats:', remainingSeats, 'requested:', request.seats_requested);
+
       if (request.seats_requested > remainingSeats) {
         toast.error(`Not enough seats! Only ${remainingSeats} seat(s) remaining.`);
         return;
